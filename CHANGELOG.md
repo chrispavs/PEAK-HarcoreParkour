@@ -5,3 +5,7 @@
 ### 0.1.1 - (2025-07-27)
 
 - Fix README gifs.
+
+### 0.1.2 - (2025-07-27)
+
+- Add reference to controller buttons in README.
