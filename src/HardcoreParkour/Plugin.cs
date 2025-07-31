@@ -1,13 +1,212 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using Photon.Pun;
+using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using Zorro.Core.Serizalization;
 
 namespace HardcoreParkour;
+
+// Holds our custom rotation data. An instance of this will be associated with
+// each CharacterSyncer instance.
+public class ExtraCharacterSyncData
+{
+    public List<quaternion>? TargetRotations;
+}
+
+[HarmonyPatch]
+class FlipSyncPatch
+{
+    // Attach our extra data to each CharacterSyncer instance.
+    // This is thread-safe and prevents memory leaks automatically.
+    private static readonly ConditionalWeakTable<CharacterSyncer, ExtraCharacterSyncData> syncData = new ConditionalWeakTable<CharacterSyncer, ExtraCharacterSyncData>();
+
+    // Temporary fields to pass data between patches.
+    private static Character? characterToWrite;
+    private static List<quaternion>? receivedRotations;
+
+    /* --- Sending Data --- */
+
+    // Captures the local player's character instance before serialization begins.
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(CharacterSyncer), "GetDataToWrite")]
+    private static void Prefix_GetDataToWrite(CharacterSyncer __instance)
+    {
+        // Before serializing, store a reference to the local player's character.
+        // The photonView check ensures we only do this for the character we control.
+        if (__instance.photonView.IsMine)
+        {
+            characterToWrite = __instance.GetComponent<Character>();
+        }
+    }
+
+    // Serializes the rigidbody count and rotations.
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(CharacterSyncData), "Serialize")]
+    private static void Postfix_Serialize(BinarySerializer serializer)
+    {
+        try
+        {
+            // After the game serializes its data, we add our rotation data to the stream.
+            if (characterToWrite != null)
+            {
+                var rigidbodies = characterToWrite.refs.ragdoll.rigidbodies;
+                int count = rigidbodies.Count;
+
+                // Add bounds checking to prevent invalid data
+                if (count > 0 && count <= 50) // Reasonable upper limit
+                {
+                    serializer.WriteInt(count);
+                    foreach (var rb in rigidbodies)
+                    {
+                        serializer.WriteQuaternion(rb.rotation);
+                    }
+                }
+                else
+                {
+                    if (Plugin.debuggingLogsConfig!.Value)
+                    {
+                        Plugin.Log.LogWarning($"Invalid rigidbody count: {count}, writing 0");
+                    }
+
+                    // Write 0 to prevent stream corruption.
+                    serializer.WriteInt(0);
+                }
+
+                // Clean up the temporary reference immediately after use.
+                characterToWrite = null;
+            }
+            else
+            {
+                serializer.WriteInt(0);
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Plugin.debuggingLogsConfig!.Value)
+            {
+                Plugin.Log.LogError($"Error in serialization: {ex.Message}");
+            }
+
+            serializer.WriteInt(0);
+        }
+    }
+
+    /* --- Receiving Data --- */
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(CharacterSyncData), "Deserialize")]
+    private static void Postfix_Deserialize(BinaryDeserializer deserializer)
+    {
+        try
+        {
+            // After the game deserializes its data, we read our custom rotation data.
+            int count = deserializer.ReadInt();
+
+            // Add bounds checking to prevent reading invalid data
+            if (count > 0 && count <= 50) // Reasonable upper limit
+            {
+                var rotations = new List<quaternion>(count);
+                for (int i = 0; i < count; i++)
+                {
+                    rotations.Add(deserializer.ReadQuaternion());
+                }
+                // Store the read data in a temporary field to be picked up by the OnDataReceived patch.
+                receivedRotations = rotations;
+            }
+            else
+            {
+                if (count != 0 && Plugin.debuggingLogsConfig!.Value)
+                {
+                    Plugin.Log.LogWarning($"Invalid rotation count received: {count}, treating as 0");
+                }
+
+                // Ensure the temporary field is null if no data was sent.
+                receivedRotations = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Plugin.debuggingLogsConfig!.Value)
+            {
+                Plugin.Log.LogError($"Error in deserialization: {ex.Message}");
+            }
+
+            receivedRotations = null;
+        }
+    }
+
+    // Associate received data with a character instance.
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(CharacterSyncer), "OnDataReceived")]
+    private static void Postfix_OnDataReceived(CharacterSyncer __instance)
+    {
+        try
+        {
+            // This patch runs right after the game processes the received data.
+            // We check if our temporary 'receivedRotations' field contains new data.
+            if (receivedRotations != null)
+            {
+                // Get (or create) the extra data storage for this specific character instance.
+                var extraData = syncData.GetOrCreateValue(__instance);
+                // Store the rotations.
+                extraData.TargetRotations = receivedRotations;
+
+                // Clear the static field so it's not accidentally applied to another character.
+                receivedRotations = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Plugin.debuggingLogsConfig!.Value)
+            {
+                Plugin.Log.LogError($"Error in OnDataReceived: {ex.Message}");
+            }
+            receivedRotations = null;
+        }
+    }
+
+    // Apply the rotations each frame.
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(CharacterSyncer), "Update")]
+    private static void Postfix_Update(CharacterSyncer __instance)
+    {
+        try
+        {
+            // We only want to apply rotations to remote players, not the one we control.
+            if (!__instance.photonView.IsMine)
+            {
+                // Try to get the extra sync data for this character.
+                if (syncData.TryGetValue(__instance, out var extraData) && extraData.TargetRotations != null)
+                {
+                    var character = __instance.GetComponent<Character>();
+                    var rigidbodies = character.refs.ragdoll.rigidbodies;
+
+                    // Ensure the counts match to prevent errors.
+                    if (rigidbodies.Count == extraData.TargetRotations.Count)
+                    {
+                        for (int i = 0; i < rigidbodies.Count; i++)
+                        {
+                            // Smoothly interpolate from the current rotation to the target rotation.
+                            // Slerp is used for rotations. Time.deltaTime makes it frame-rate independent.
+                            // The '15f' factor controls the speed of interpolation.
+                            rigidbodies[i].rotation = Quaternion.Slerp(rigidbodies[i].rotation, extraData.TargetRotations[i], Time.deltaTime * 15f);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogError($"Error in Update: {ex.Message}");
+        }
+    }
+}
 
 // Game Notes:
 //
@@ -15,6 +214,12 @@ namespace HardcoreParkour;
 // version depending on a 0 or 1 value.
 //   0 is falling/passed out/etc. (ragdoll is kinematic)
 //   1 is standing (ragdoll is non-kinematic)
+//
+// Players can't see each other's flips because ragdoll rotations are not
+// synced online. CharacterSyncer already does a lot of syncing logic, so we
+// add our own logic to sync these rotations.
+// The networking library is Photon.Pun and here is their documentation on
+// player networking: https://doc.photonengine.com/pun/current/demos-and-tutorials/pun-basics-tutorial/player-networking
 [BepInAutoPlugin]
 public partial class Plugin : BaseUnityPlugin
 {
@@ -22,6 +227,7 @@ public partial class Plugin : BaseUnityPlugin
     internal static ConfigEntry<KeyCode>? keyboardKeybindConfig;
     internal static ConfigEntry<KeyCode>? controllerKeybindConfig;
     internal static ConfigEntry<bool>? debuggingLogsConfig;
+    internal static float3 lastSyncedRotation = float3.zero;
 
     const float launchForceForward = 200f;
     const float launchForceUp = 200f;
@@ -47,6 +253,8 @@ public partial class Plugin : BaseUnityPlugin
         // Log our awake here so we can see it in LogOutput.log file
         Log = Logger;
         Log.LogInfo($"Plugin {Name} is loaded!");
+
+        Harmony.CreateAndPatchAll(typeof(FlipSyncPatch));
 
         // Create a yaw reference transform to keep track of flip direction.
         GameObject yawReference = new GameObject("HardcoreParkour_YawReference");
