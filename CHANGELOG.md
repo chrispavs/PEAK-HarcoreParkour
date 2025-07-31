@@ -13,3 +13,7 @@
 ### 0.2.0 - (2025-07-30)
 
 -   Fips are now synced in multiplayer!
+
+### 0.2.1 - (2025-07-30)
+
+-   Bump version because I uploaded the wrong README the first time lol.
