@@ -1,5 +1,7 @@
 🧗‍♂️ **Now you can climb in your parkour game!** 🤸‍♂️
 
+> **🎉 Update 0.2.0 is here! You can now see other players' flips in multiplayer! 💖**
+
 # ✨ HardcoreParkour
 
 Press **F** ⌨️ or **RB** 🎮 while in the air to do flips!
@@ -14,20 +16,21 @@ You can also do **backflips** and **sideflips** for maximum parkour expression. 
 
 # Known Issues
 
-- **Multiplayer Syncing:** For some reason, players can't see each other flip. You'll still get your stamina back, but no one will know how sick your flip was :(
+-   **Flip consistency:** The flip force is a little inconsistent. Sometimes you'll fall on your forehead and sometimes you'll be sent flying. I'll likely be adjusting these in future releases.
 
-- **Flip consistency:** The flip force is a little inconsistent. Sometimes you'll fall on your forehead and sometimes you'll be sent flying. I'll likely be adjusting these in future releases.
+-   **Camera pitch when flipping**: The camera sometimes leans left and right when you're flipping forward, especially when sprinting. This is pretty disorientating, and that's not a great emotion to experience.
 
 # Config
 
-| Option | Description | Default |
-| ------ | ----------- | ------- |
-| **Keyboard Keybind** | Keyboard key used to trigger flips. | `F` |
+| Option                 | Description                                                                                                                   | Default           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **Keyboard Keybind**   | Keyboard key used to trigger flips.                                                                                           | `F`               |
 | **Controller Keybind** | Controller button used to trigger flips. You can change the button number based on [this image](https://imgur.com/a/pOxFQTk). | `JoystickButton5` |
-| **Enable Logs** | Enable logs for debugging. | `false` |
+| **Enable Logs**        | Enable logs for debugging.                                                                                                    | `false`           |
 
 # Future Plans
-- Fix multiplayer visual syncing
-- Add wall running
-- Add wall flipping
-- Add vaulting
+
+-   Stabilize camera pitch when flipping
+-   Add wall running
+-   Add wall flipping
+-   Add vaulting
