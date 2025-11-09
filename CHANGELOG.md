@@ -17,3 +17,8 @@
 ### 0.2.1 - (2025-07-30)
 
 -   Bump version because I uploaded the wrong README the first time lol.
+
+### 0.2.2 - (2025-11-09)
+
+-   Fix for Roots update (hopefully)!
+-   Play a little sound to indicate that you landed a flip successfully.

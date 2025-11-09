@@ -226,6 +226,7 @@ public partial class Plugin : BaseUnityPlugin
     internal static ManualLogSource Log { get; private set; } = null!;
     internal static ConfigEntry<KeyCode>? keyboardKeybindConfig;
     internal static ConfigEntry<KeyCode>? controllerKeybindConfig;
+    internal static ConfigEntry<bool>? playFlipSuccessSoundConfig;
     internal static ConfigEntry<bool>? debuggingLogsConfig;
     internal static float3 lastSyncedRotation = float3.zero;
 
@@ -244,6 +245,8 @@ public partial class Plugin : BaseUnityPlugin
     float lastGroundedTime = 0f;
     Vector3 flipStartYawForward = Vector3.zero;
     Vector3 flipStartYawRight = Vector3.zero;
+    // The sound effect to play when the player lands a flip.
+    private SFX_Instance? successSound;
 
     // Reference transform that only follows camera yaw (horizontal rotation).
     private Transform? yawReferenceTransform;
@@ -263,6 +266,7 @@ public partial class Plugin : BaseUnityPlugin
 
         keyboardKeybindConfig = Config.Bind("Settings", "Keyboard Keybind", KeyCode.F, "Keyboard key used to trigger flips. Defaults to F.");
         controllerKeybindConfig = Config.Bind("Settings", "Controller Keybind", KeyCode.JoystickButton5, "Controller button used to trigger flips. Defaults to JoystickButton5 (RB).");
+        playFlipSuccessSoundConfig = Config.Bind("Settings", "Play Flip Success Sound", true, "Play a sound to indicate that a flip was landed successfully.");
         debuggingLogsConfig = Config.Bind("Debugging", "Enable Logs", false, "Enable logs for debugging.");
     }
 
@@ -330,6 +334,11 @@ public partial class Plugin : BaseUnityPlugin
         Character localCharacter = Character.localCharacter;
         if (localCharacter == null || !Application.isFocused || yawReferenceTransform == null) return;
 
+        if (successSound == null && playFlipSuccessSoundConfig!.Value)
+        {
+            successSound = localCharacter.GetComponent<PointPinger>().pointPrefab.GetComponent<PointPing>().pingSound;
+        }
+
         if (localCharacter.data.isGrounded)
         {
             lastGroundedTime = Time.time;
@@ -354,6 +363,12 @@ public partial class Plugin : BaseUnityPlugin
                     if (debuggingLogsConfig!.Value)
                     {
                         Log.LogInfo($"Landed the flip!");
+                    }
+
+                    // Try to play a little success sound.
+                    if (successSound != null && playFlipSuccessSoundConfig!.Value)
+                    {
+                        successSound?.Play(localCharacter.Head);
                     }
 
                     // Reset the fall animations.
