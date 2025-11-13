@@ -22,12 +22,14 @@ You can also do **backflips** and **sideflips** for maximum parkour expression. 
 
 # Config
 
-| Option                      | Description                                                                                                                   | Default           |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| **Keyboard Keybind**        | Keyboard key used to trigger flips.                                                                                           | `F`               |
-| **Controller Keybind**      | Controller button used to trigger flips. You can change the button number based on [this image](https://imgur.com/a/pOxFQTk). | `JoystickButton5` |
-| **Play Flip Success Sound** | Play a sound to indicate that a flip was landed successfully.                                                                 | `true`            |
-| **Enable Logs**             | Enable logs for debugging.                                                                                                    | `false`           |
+| Option                         | Description                                                                                                                   | Default           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **Keyboard Keybind**           | Keyboard key used to trigger flips.                                                                                           | `F`               |
+| **Controller Keybind**         | Controller button used to trigger flips. You can change the button number based on [this image](https://imgur.com/a/pOxFQTk). | `JoystickButton5` |
+| **Flip Success Sound Enabled** | Play a sound to indicate that a flip was landed successfully.                                                                 | `true`            |
+| **Flip Success Sound Volume**  | Volume level of the flip sucess sound.                                                                                        | `0.5`             |
+| **Flip Success Sound Pitch**   | Pitch of the flip sucess sound.                                                                                               | `1.3`             |
+| **Enable Logs**                | Enable logs for debugging.                                                                                                    | `false`           |
 
 # Future Plans
 

@@ -22,3 +22,8 @@
 
 -   Fix for Roots update (hopefully)!
 -   Play a little sound to indicate that you landed a flip successfully.
+
+### 0.2.3 - (2025-11-12)
+
+-   Correct the default setting for the flip success sound in the README.
+-   Felt bad for messing that up, so I added a volume & pitch option for the success sound too.

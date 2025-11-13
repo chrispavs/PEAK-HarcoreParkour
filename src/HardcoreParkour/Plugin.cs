@@ -226,7 +226,9 @@ public partial class Plugin : BaseUnityPlugin
     internal static ManualLogSource Log { get; private set; } = null!;
     internal static ConfigEntry<KeyCode>? keyboardKeybindConfig;
     internal static ConfigEntry<KeyCode>? controllerKeybindConfig;
-    internal static ConfigEntry<bool>? playFlipSuccessSoundConfig;
+    internal static ConfigEntry<bool>? flipSuccessSoundEnabledConfig;
+    internal static ConfigEntry<float>? flipSuccessSoundVolumeConfig;
+    internal static ConfigEntry<float>? flipSuccessSoundPitchConfig;
     internal static ConfigEntry<bool>? debuggingLogsConfig;
     internal static float3 lastSyncedRotation = float3.zero;
 
@@ -266,7 +268,9 @@ public partial class Plugin : BaseUnityPlugin
 
         keyboardKeybindConfig = Config.Bind("Settings", "Keyboard Keybind", KeyCode.F, "Keyboard key used to trigger flips. Defaults to F.");
         controllerKeybindConfig = Config.Bind("Settings", "Controller Keybind", KeyCode.JoystickButton5, "Controller button used to trigger flips. Defaults to JoystickButton5 (RB).");
-        playFlipSuccessSoundConfig = Config.Bind("Settings", "Play Flip Success Sound", true, "Play a sound to indicate that a flip was landed successfully.");
+        flipSuccessSoundEnabledConfig = Config.Bind("Settings", "Flip Success Sound Enabled", true, "Play a sound to indicate that a flip was landed successfully.");
+        flipSuccessSoundVolumeConfig = Config.Bind("Settings", "Flip Success Sound Volume", .5f, "Volume of the flip success sound.");
+        flipSuccessSoundPitchConfig = Config.Bind("Settings", "Flip Success Sound Pitch", 1.3f, "Pitch of the flip success sound.");
         debuggingLogsConfig = Config.Bind("Debugging", "Enable Logs", false, "Enable logs for debugging.");
     }
 
@@ -334,9 +338,16 @@ public partial class Plugin : BaseUnityPlugin
         Character localCharacter = Character.localCharacter;
         if (localCharacter == null || !Application.isFocused || yawReferenceTransform == null) return;
 
-        if (successSound == null && playFlipSuccessSoundConfig!.Value)
+        if (successSound == null && flipSuccessSoundEnabledConfig!.Value)
         {
-            successSound = localCharacter.GetComponent<PointPinger>().pointPrefab.GetComponent<PointPing>().pingSound;
+            if (localCharacter.GetComponent<PointPinger>() != null && localCharacter.GetComponent<PointPinger>().pointPrefab != null && localCharacter.GetComponent<PointPinger>().pointPrefab.GetComponent<PointPing>() != null)
+            {
+                SFX_Instance pingSound = localCharacter.GetComponent<PointPinger>().pointPrefab.GetComponent<PointPing>().pingSound;
+                // Make a copy of the sound effect so we adjust it without modifying the original.
+                successSound = Instantiate(pingSound);
+                successSound.settings.volume = pingSound.settings.volume * flipSuccessSoundVolumeConfig!.Value;
+                successSound.settings.pitch = pingSound.settings.pitch * flipSuccessSoundPitchConfig!.Value;
+            }
         }
 
         if (localCharacter.data.isGrounded)
@@ -366,7 +377,7 @@ public partial class Plugin : BaseUnityPlugin
                     }
 
                     // Try to play a little success sound.
-                    if (successSound != null && playFlipSuccessSoundConfig!.Value)
+                    if (successSound != null && flipSuccessSoundEnabledConfig!.Value)
                     {
                         successSound?.Play(localCharacter.Head);
                     }
