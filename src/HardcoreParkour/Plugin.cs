@@ -418,7 +418,7 @@ public partial class Plugin : BaseUnityPlugin
             flipStartTime = Time.time;
 
             // Toggle the ragdoll state.
-            localCharacter.photonView.RPC("RPCA_Fall", RpcTarget.All, .5f);
+            localCharacter.Fall(0.5f);
 
             flipStartYawForward = yawReferenceTransform.forward;
             flipStartYawRight = yawReferenceTransform.right;

@@ -1,6 +1,6 @@
 🧗‍♂️ **Now you can climb in your parkour game!** 🤸‍♂️
 
-> **🎉 Update 0.2.0 is here! You can now see other players' flips in multiplayer! 💖**
+> **👑 Update 0.2.4! The mod is fixed for THE FINAL ASCENT update! Thank you everyone for the love on the mod 🥰**
 
 # ✨ HardcoreParkour
 
@@ -16,9 +16,9 @@ You can also do **backflips** and **sideflips** for maximum parkour expression. 
 
 # Known Issues
 
--   **Flip consistency:** The flip force is a little inconsistent. Sometimes you'll fall on your forehead and sometimes you'll be sent flying. I'll likely be adjusting these in future releases.
+- **Flip consistency:** The flip force is a little inconsistent. Sometimes you'll fall on your forehead and sometimes you'll be sent flying. I'll likely be adjusting these in future releases.
 
--   **Camera pitch when flipping**: The camera sometimes leans left and right when you're flipping forward, especially when sprinting. This is pretty disorientating, and that's not a great emotion to experience.
+- **Camera pitch when flipping**: The camera sometimes leans left and right when you're flipping forward, especially when sprinting. This is pretty disorientating, and that's not a great emotion.
 
 # Config
 
@@ -33,7 +33,7 @@ You can also do **backflips** and **sideflips** for maximum parkour expression. 
 
 # Future Plans
 
--   Stabilize camera pitch when flipping
--   Add wall running
--   Add wall flipping
--   Add vaulting
+- Stabilize camera pitch when flipping
+- Add wall running
+- Add wall flipping
+- Add vaulting
