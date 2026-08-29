@@ -1,6 +1,6 @@
 🧗‍♂️ **Now you can climb in your parkour game!** 🤸‍♂️
 
-> **👑 Update 0.2.4! The mod is fixed for THE FINAL ASCENT update! Thank you everyone for the love on the mod 🥰**
+> **👑 Update 0.2.5! The mod is fixed for THE FINAL ASCENT update! Thank you everyone for the love on this mod 🥰**
 
 # ✨ HardcoreParkour
 
